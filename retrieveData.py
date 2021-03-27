@@ -10,13 +10,8 @@ estimaciones = [
     'chiliz',
     'cardano',
     'filecoin',
-    'telcoin',
-    'kucoin-shares',
-    'bittoken',
-    'essentia',
-    'axie-infinity',
-    'dodo',
-    'dego-finance',
-    'wink',
+    'eos',
+    'fusion',
+    'safemoon'
      ]
 Utils.retrieve_coin_data(self, estimaciones=estimaciones)
