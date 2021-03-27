@@ -66,8 +66,8 @@ class Utils:
                     ESPERADO = "BAJA"
                 retrieve_coin["expectativa"] = ESPERADO
 
-                barrera = coin_data["total_volume"] + int((coin_data["total_volume"]*(PORCENTAJE))/100)
-                if barrera>=int(retrieve_coin["volumen_avg"]):
+                barrera = coin_data["total_volume"] + float((coin_data["total_volume"]*(PORCENTAJE))/100)
+                if barrera>=float(retrieve_coin["volumen_avg"]):
                     ALERTA = "ALERTA"
                 else:
                     ALERTA = ""
@@ -76,12 +76,12 @@ class Utils:
 
                 for col, value in enumerate(retrieve_coin.values(), start=1):
                     sheet.cell(row=row, column=col).value = value
-                    sheet.cell(row=row, column=col).number_format = '#,##0.00000000000'
+                    sheet.cell(row=row, column=col).number_format = '#,##0.0000000000000'
                 wb.save(EXCEL_FILE_OUTPUT)
                 row = row+1
                 count = count + 1
             except (IndexError, KeyError, ValueError, ZeroDivisionError) as error:
-                print(error)
+                print(error, coin)
                 continue
 
 
