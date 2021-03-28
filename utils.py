@@ -4,8 +4,8 @@ import requests
 import json
 from datetime import datetime, timedelta
 
-PLAZO = 60
-PORCENTAJE = 20
+PLAZO = 10
+PORCENTAJE = 25
 DESDE = (datetime.utcnow() - timedelta(days = PLAZO)).timestamp()
 HASTA  = datetime.utcnow().timestamp()
 EXCEL_FILE ='./template/Crypto.xlsx'
