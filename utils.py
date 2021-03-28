@@ -80,8 +80,15 @@ class Utils:
                 wb.save(EXCEL_FILE_OUTPUT)
                 row = row+1
                 count = count + 1
-            except (IndexError, KeyError, ValueError, ZeroDivisionError) as error:
+            except (IndexError, KeyError, ValueError, ZeroDivisionError, TypeError) as error:
                 print(error, coin)
                 continue
 
 
+    def retrieve_coin_list(self):
+        _coin_list = json.loads(requests.get("https://api.coingecko.com/api/v3/coins/list?include_platform=false").text)
+        coin_list = []
+        for coins in _coin_list:
+            coin_list.append(coins['id'])
+        print(coin_list)
+        return coin_list
