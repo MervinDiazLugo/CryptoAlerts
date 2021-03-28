@@ -52,6 +52,7 @@ class Utils:
                         coin)).text)
                 coin_data = coin_data[0]
                 retrieve_coin["id"] =coin_data['id']
+                retrieve_coin["symbol"] = coin_data['id']
                 retrieve_coin["current_price"] = coin_data['current_price']
                 retrieve_coin["market_cap"] = coin_data['market_cap']
                 retrieve_coin["circulating_supply"] = coin_data['circulating_supply']
