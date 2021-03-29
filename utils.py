@@ -5,7 +5,7 @@ import json
 from datetime import datetime, timedelta
 
 PLAZO = 10
-PORCENTAJE = 25
+PORCENTAJE = 1.25
 DESDE = (datetime.utcnow() - timedelta(days = PLAZO)).timestamp()
 HASTA  = datetime.utcnow().timestamp()
 EXCEL_FILE ='./template/Crypto.xlsx'
@@ -32,13 +32,21 @@ class Utils:
             f"https://api.coingecko.com/api/v3/coins/{id}/market_chart?vs_currency=usd&days={PLAZO}&interval=daily").text)
 
         avg = 0
+        most = 0
         volume = total_volumes['total_volumes']
         count = 0
+
+        for vol in volume:
+            if vol[1] > most:
+                most = vol[1]
+
         for vol in volume:
             avg = avg + vol[1]
             count = count + 1
 
         avg = avg / count
+        avg = (avg+most)/2
+
         return avg
 
     def retrieve_coin_data(self, excel_file=EXCEL_FILE, hoja=HOJA,  estimaciones=[]):
@@ -62,17 +70,15 @@ class Utils:
                 retrieve_coin["volumen_avg"] = Utils.retrieve_coin_estimated_volume(self, coin_data['id'])
 
                 if coin_data['total_volume'] >= retrieve_coin["volumen_avg"]:
-                    ESPERADO = "ALTA"
+                    retrieve_coin["expectativa"] = "ALTA"
                 else:
-                    ESPERADO = "BAJA"
-                retrieve_coin["expectativa"] = ESPERADO
+                    retrieve_coin['expectativa'] = "BAJA"
 
-                barrera = coin_data["total_volume"] + float((coin_data["total_volume"]*(PORCENTAJE))/100)
-                if barrera>=float(retrieve_coin["volumen_avg"]):
-                    ALERTA = "ALERTA"
+                barrera = float(retrieve_coin["volumen_avg"]*(PORCENTAJE))
+                if retrieve_coin["total_volume"] >= barrera:
+                    retrieve_coin['Alerta'] = "ALERTA"
                 else:
-                    ALERTA = ""
-                retrieve_coin['Alerta'] = ALERTA
+                    retrieve_coin['Alerta'] = ""
                 print(retrieve_coin)
 
                 for col, value in enumerate(retrieve_coin.values(), start=1):
@@ -81,6 +87,8 @@ class Utils:
                 wb.save(EXCEL_FILE_OUTPUT)
                 row = row+1
                 count = count + 1
+                retrieve_coin["expectativa"] = ""
+                retrieve_coin['Alerta'] = ""
             except (IndexError, KeyError, ValueError, ZeroDivisionError, TypeError) as error:
                 print(error, coin)
                 continue
