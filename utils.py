@@ -90,8 +90,7 @@ class Utils:
                 wb.save(EXCEL_FILE_OUTPUT)
                 row = row+1
                 count = count + 1
-                retrieve_coin["expectativa"] = ""
-                retrieve_coin['Alerta'] = ""
+                retrieve_coin.clear()
             except (IndexError, KeyError, ValueError, ZeroDivisionError, TypeError) as error:
                 print(error, coin)
                 continue
