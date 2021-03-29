@@ -1,3 +1,5 @@
+import time
+
 import null as null
 from openpyxl import load_workbook
 import requests
@@ -50,6 +52,7 @@ class Utils:
         return avg
 
     def retrieve_coin_data(self, excel_file=EXCEL_FILE, hoja=HOJA,  estimaciones=[]):
+        time.sleep(5)
         sheet = Utils.load_sheet(excel_file, hoja)
         row = 2
         count = 0
