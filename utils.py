@@ -1,18 +1,20 @@
-import time
-
-import null as null
+import smtplib
+from email.mime.application import MIMEApplication
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.utils import COMMASPACE, formatdate
 from openpyxl import load_workbook
 import requests
 import json
 from datetime import datetime, timedelta
+from os.path import basename
 
 PLAZO = 10
-PORCENTAJE = 1.25
+PORCENTAJE = 1.8
 DESDE = (datetime.utcnow() - timedelta(days = PLAZO)).timestamp()
 HASTA  = datetime.utcnow().timestamp()
 EXCEL_FILE ='./template/Crypto.xlsx'
 EXCEL_FILE_OUTPUT ='./output/Crypto_Copy.xlsx'
-HOJA= "Hoja1"
 COIN_LIST = []
 retrieve_coin={}
 ESPERADO = ""
@@ -24,10 +26,20 @@ class Utils:
         wb = load_workbook(excel_file)
         return wb
 
-    def load_sheet(self, excel_file=EXCEL_FILE, hoja=HOJA):
+    def load_sheet(self, excel_file=EXCEL_FILE, hoja="Hoja1"):
         excel = Utils.workbook(excel_file)
         ws = excel[hoja]
         return ws
+
+    def retrieve_coin_trend(self):
+        coin_trend = json.loads(requests.get("https://api.coingecko.com/api/v3/search/trending").text)
+        coin_trend = coin_trend['coins']
+        _coin_trend = []
+        for _trend in coin_trend:
+            items = _trend['item']
+            _coin_trend.append(items['id'])
+        print(_coin_trend)
+        return _coin_trend
 
     def retrieve_coin_estimated_volume(self, id):
         total_volumes = json.loads(requests.get(
@@ -51,9 +63,8 @@ class Utils:
 
         return avg
 
-    def retrieve_coin_data(self, excel_file=EXCEL_FILE, hoja=HOJA,  estimaciones=[]):
-        time.sleep(5)
-        sheet = Utils.load_sheet(excel_file, hoja)
+    def retrieve_coin_data(self, excel_file=EXCEL_FILE, hoja="Hoja1",  estimaciones=[]):
+        sheet = self.load_sheet(excel_file, hoja)
         row = 2
         count = 0
         for coin in estimaciones:
@@ -72,7 +83,7 @@ class Utils:
                 retrieve_coin["diferencial"] = retrieve_coin["real_market_price"] - coin_data['current_price']
                 retrieve_coin["volumen_avg"] = Utils.retrieve_coin_estimated_volume(self, coin_data['id'])
 
-                if coin_data['total_volume'] >= retrieve_coin["volumen_avg"]:
+                if coin_data['total_volume'] >= (retrieve_coin["volumen_avg"] * 1.2):
                     retrieve_coin["expectativa"] = "ALTA"
                 else:
                     retrieve_coin['expectativa'] = "BAJA"
@@ -94,6 +105,7 @@ class Utils:
             except (IndexError, KeyError, ValueError, ZeroDivisionError, TypeError) as error:
                 print(error, coin)
                 continue
+        Utils.mailing(self)
 
 
     def retrieve_coin_list(self):
@@ -103,3 +115,53 @@ class Utils:
             coin_list.append(coins['id'])
         print(coin_list)
         return coin_list
+
+    ##########################################################################
+    #########################   -=_EMAIL_=-   #########################
+    ##########################################################################
+    def send_mail(subject, text, files=None):
+        strTimeSubject = str(datetime.today().strftime("%Y-%m-%dT%H:%M:%S"))
+        msgAsunto = "Crypto Alerts: " + strTimeSubject
+        msg = MIMEMultipart()
+        msg['From'] = "mervindiazlugo@pepisandbox.com"
+        msgTO = ["mervindiazlugo@gmail.com"]
+        msg['To'] = COMMASPACE.join(msgTO)
+        msg['Date'] = formatdate(localtime=True)
+        msg['Subject'] = msgAsunto
+
+        msg.attach(MIMEText(text))
+
+        for f in files or []:
+            with open(f, "rb") as fil:
+                part = MIMEApplication(
+                    fil.read(),
+                    Name=basename(f)
+                )
+            # After office close
+            part['Content-Disposition'] = 'attachment; filename="%s"' % basename(f)
+            msg.attach(part)
+
+        smtpHost = "smtp.pepipost.com"
+        smtpPort = "25"
+        smtpUser = "mervindiazlugo"
+        smtpPass = "mervindiazlugo_1243b9480a64d0fd9a2ec1e3c8e58b74"
+
+        smtp = smtplib.SMTP(smtpHost, smtpPort)
+        smtp.set_debuglevel(False)
+        smtp.login(smtpUser, smtpPass)
+        smtp.default_port
+        smtp.sendmail(msg['From'], msg['To'], msg.as_string())
+        smtp.close()
+
+    def mailing(self, Adjuntos=EXCEL_FILE_OUTPUT):
+        msgBody = ('''
+                            Esta notificacion fue generada de forma automatica, al concluir el proceso pruebas automatizado
+
+                            --> (#) Adjuntos los indicadores correspondientes. (#) <--
+
+
+                            ''')
+        #
+        msgBody = msgBody.format()
+        msgAttachments = [Adjuntos]
+        Utils.send_mail(self, msgBody, msgAttachments)

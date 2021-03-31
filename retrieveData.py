@@ -1,6 +1,5 @@
-from self import self
-
 from utils import Utils
+utils = Utils()
 
 estimaciones = [
     'bitcoin',
@@ -11,9 +10,11 @@ estimaciones = [
     'cardano',
     'filecoin',
     'eos',
-    'ankr'
+    'ankr',
+    'metal'
      ]
-Utils.retrieve_coin_data(self, estimaciones=estimaciones)
+utils.retrieve_coin_data(estimaciones=estimaciones)
 
-#Utils.retrieve_coin_data(self, estimaciones=Utils.retrieve_coin_list(self))
+#utils.retrieve_coin_data(self, estimaciones=utils.retrieve_coin_list(self))
 
+#utils.retrieve_coin_data(hoja="Trends", estimaciones=utils.retrieve_coin_trend())
