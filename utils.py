@@ -63,7 +63,7 @@ class Utils:
 
         return avg
 
-    def retrieve_coin_data(self, excel_file=EXCEL_FILE, hoja="Hoja1",  estimaciones=[]):
+    def retrieve_coin_data(self, excel_file=EXCEL_FILE, hoja="Hoja1",  estimaciones=[], baja = False, output = './output/Crypto_Copy.xlsx' ):
         sheet = self.load_sheet(excel_file, hoja)
         row = 2
         count = 0
@@ -73,15 +73,15 @@ class Utils:
                     "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids={}&order=market_cap_desc&per_page=100&page=1&sparkline=false".format(
                         coin)).text)
                 coin_data = coin_data[0]
-                retrieve_coin["id"] =coin_data['id']
+                retrieve_coin["id"] ='=HYPERLINK("{}", "{}")'.format("https://www.coingecko.com/es/monedas/" + coin_data['id'], coin_data['id'])
                 retrieve_coin["symbol"] = coin_data['symbol']
                 retrieve_coin["current_price"] = coin_data['current_price']
                 retrieve_coin["market_cap"] = coin_data['market_cap']
                 retrieve_coin["circulating_supply"] = coin_data['circulating_supply']
                 retrieve_coin["total_volume"] = coin_data['total_volume']
                 retrieve_coin["real_market_price"] = coin_data['market_cap'] / coin_data['circulating_supply']
-                retrieve_coin["diferencial"] = retrieve_coin["real_market_price"] - coin_data['current_price']
                 retrieve_coin["volumen_avg"] = Utils.retrieve_coin_estimated_volume(self, coin_data['id'])
+                retrieve_coin["diferencial"] = (float(coin_data['total_volume']) / float(retrieve_coin["volumen_avg"]))*100
 
                 if coin_data['total_volume'] >= (retrieve_coin["volumen_avg"] * 1.2):
                     retrieve_coin["expectativa"] = "ALTA"
@@ -93,20 +93,31 @@ class Utils:
                     retrieve_coin['Alerta'] = "ALERTA"
                 else:
                     retrieve_coin['Alerta'] = ""
+
+                if baja and retrieve_coin['expectativa'] == "BAJA":
+                    retrieve_coin.clear()
+                    continue
+
+                if float(retrieve_coin["current_price"]) == 0 or float(retrieve_coin["volumen_avg"]) < 100000000 or float(retrieve_coin["market_cap"]) == 0:
+                    retrieve_coin.clear()
+                    continue
+
                 print(retrieve_coin)
 
                 for col, value in enumerate(retrieve_coin.values(), start=1):
                     sheet.cell(row=row, column=col).value = value
                     sheet.cell(row=row, column=col).number_format = '#,##0.0000000000000'
-                wb.save(EXCEL_FILE_OUTPUT)
+                wb.save(output)
                 row = row+1
                 count = count + 1
                 retrieve_coin.clear()
             except (IndexError, KeyError, ValueError, ZeroDivisionError, TypeError) as error:
                 print(error, coin)
                 continue
-        Utils.mailing(self)
-
+        try:
+            Utils.mailing(self, output)
+        except(FileNotFoundError) as e:
+            print(e)
 
     def retrieve_coin_list(self):
         _coin_list = json.loads(requests.get("https://api.coingecko.com/api/v3/coins/list?include_platform=false").text)
@@ -153,7 +164,7 @@ class Utils:
         smtp.sendmail(msg['From'], msg['To'], msg.as_string())
         smtp.close()
 
-    def mailing(self, Adjuntos=EXCEL_FILE_OUTPUT):
+    def mailing(self, Adjuntos='./output/Crypto_Copy.xlsx'):
         msgBody = ('''
                             Esta notificacion fue generada de forma automatica, al concluir el proceso pruebas automatizado
 
